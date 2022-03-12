@@ -201,7 +201,7 @@ class Portfolio:
     def nav(self):
         return self._NAV
 
-    def single_trade(self, ticker: str, trade_time: str, amount: int or float, action_type: str):
+    def single_trade(self, ticker: str, trade_time: str, amount: int or float, action_type: str, _update: bool = True):
         if action_type == 'sell':
             amount = -amount
         trade_time = datetime.strptime(trade_time, '%Y-%m-%d %H:%M:%S')
@@ -286,18 +286,20 @@ class Portfolio:
                      Type=action_type, TradeTime=trade_date, Amount=amount, TradePrice=price,
                      TradeValue=price * amount, AssetId=asset_id)
         Trades(**trade).save()
-
-        self.update_prices()
+        self.update_cash()
         self.update_balance(trade_id, trade_date, 'Trade')
-        self.update_nav()
-        self.update_pf_weights()
 
-    def buy_asset(self, ticker: str, buy_time: str, amount: float):
-        self.single_trade(ticker=ticker, trade_time=buy_time, amount=amount, action_type='buy')
+        if _update:
+            self.update_prices()
+            self.update_nav()
+            self.update_pf_weights()
+
+    def buy_asset(self, ticker: str, buy_time: str, amount: float, _update: bool = True):
+        self.single_trade(ticker=ticker, trade_time=buy_time, amount=amount, action_type='buy', _update=True)
 
     # TODO: Add so that you cannot sell asset before you buy. i.e., in relation to trade_time
-    def sell_asset(self, ticker: str, sell_time: str, amount: float):
-        self.single_trade(ticker=ticker, trade_time=sell_time, amount=amount, action_type='sell')
+    def sell_asset(self, ticker: str, sell_time: str, amount: float, _update: bool = True):
+        self.single_trade(ticker=ticker, trade_time=sell_time, amount=amount, action_type='sell', _update=True)
 
     def capital_injection(self, injection: int):
         # TODO: Make it so that it also updated Balance collection + Cash
@@ -370,8 +372,6 @@ class Portfolio:
         for i in Prices.objects:
             if Assets.objects(Ticker=i.Ticker).first() is None:
                 Prices.objects(Ticker=i.Ticker).delete()
-
-        self.update_cash()
 
     @staticmethod
     def update_cash():
@@ -558,10 +558,10 @@ if __name__ == "__main__":
     # port.buy_asset('AAPL', '2021-12-01 00:00:00', 1)
     #port.buy_asset('BTC-USD', '2021-01-01 00:00:00', 0.5)
     #port.sell_asset('BTC-USD', '2021-08-01 00:00:00', 0.1)
-    port.graph_nav()
-    port.update_nav()
     port.update_prices()
+    port.update_nav()
     port.update_pf_weights()
+    port.graph_nav()
 
     import random
     list_of_assets = ['TSLA', 'AAPL', 'MSFT', 'BTC-USD', 'XRP-USD']
@@ -584,12 +584,12 @@ if __name__ == "__main__":
             buy_or_sell = np.random.binomial(1, 0.5)
             if buy_or_sell:
                 try:
-                    port.buy_asset(asset, date_str, amount)
+                    port.buy_asset(asset, date_str, amount, False)
                 except BalanceWarning:
                     continue
             else:
                 try:
-                    port.sell_asset(asset, date_str, amount)
+                    port.sell_asset(asset, date_str, amount, False)
                 except SellWarning:
                     continue
 
