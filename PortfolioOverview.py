@@ -352,7 +352,7 @@ class Portfolio:
         update_parameters_asset = {"$set":
             {
                 "CurrentPrice": prices_df.Price[-1],
-                "PositionValue": Assets.objects(Ticker=ticker).first().Amount * prices_df.Price[-1]
+                "PositionValue": Assets.objects(Ticker=ticker).first().Amount * prices_df. Price[-1]
             }
         }
 
@@ -564,9 +564,10 @@ if __name__ == "__main__":
     port.graph_nav()
 
     import random
+    from tqdm import tqdm
     list_of_assets = ['TSLA', 'AAPL', 'MSFT', 'BTC-USD', 'XRP-USD']
     dates = pd.date_range('2021-01-01 00:00:00', '2022-01-01 00:00:00')
-    for date in dates:
+    for date in tqdm(dates):
         trade_or_not = np.random.binomial(1, 0.1)
         if trade_or_not:
             asset = random.choice(list_of_assets)
